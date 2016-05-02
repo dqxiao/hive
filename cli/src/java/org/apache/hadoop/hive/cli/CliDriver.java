@@ -98,6 +98,7 @@ public class CliDriver {
   public static final int DELIMITED_CANDIDATE_THRESHOLD = 10;
 
   public static final String HIVERCFILE = ".hiverc";
+  public static boolean DEBUG=true;
 
   private final LogHelper console;
   protected ConsoleReader reader;
@@ -126,7 +127,24 @@ public class CliDriver {
     String cmd_trimmed = cmd.trim();
     String[] tokens = tokenizeCmd(cmd_trimmed);
     int ret = 0;
+    
+    CliExtendedDriver  ceDriver=new CliExtendedDriver();
 
+    if(ceDriver.refactorCmd(cmd_trimmed)==0){
+     // System.out.printf("matches\n");
+      try{
+        ceDriver.run();
+      }catch(Exception e){
+        console.printError("Exception raised from Shell command " + e.getLocalizedMessage(),
+            stringifyException(e));
+        ret = 1;
+      }
+      //done 
+      return ret;
+    }
+    
+    //System.out.printf("cmd:%s\n",cmd_trimmed);
+    
     if (cmd_trimmed.toLowerCase().equals("quit") || cmd_trimmed.toLowerCase().equals("exit")) {
 
       // if we have come this far - either the previous commands
@@ -663,6 +681,7 @@ public class CliDriver {
     }
 
     CliSessionState ss = new CliSessionState(new HiveConf(SessionState.class));
+   
     ss.in = System.in;
     try {
       ss.out = new PrintStream(System.out, true, "UTF-8");
@@ -691,7 +710,7 @@ public class CliDriver {
       ss.getOverriddenConfigurations().put((String) item.getKey(), (String) item.getValue());
     }
 
-    // read prompt configuration and substitute variables.
+    // read prompt HiveConf confand substitute variables.
     prompt = conf.getVar(HiveConf.ConfVars.CLIPROMPT);
     prompt = new VariableSubstitution(new HiveVariableSource() {
       @Override
@@ -710,6 +729,8 @@ public class CliDriver {
     }
 
     ss.updateThreadName();
+    
+    
 
     // execute cli driver work
     try {
@@ -738,6 +759,8 @@ public class CliDriver {
 
     // Execute -i init files (always in silent mode)
     cli.processInitFiles(ss);
+    
+    
 
     if (ss.execString != null) {
       int cmdProcessStatus = cli.processLine(ss.execString);
