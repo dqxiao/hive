@@ -38,8 +38,8 @@ public class CliExtendedDriver {
 				"DestinationAttrIndex","(\\d+)", "nextLine",
 				"Granularity", "(Singleton|Range|List)", "nextLine",
 				"MappingFunc", "(\\w+)","nextLine",
-				"InputDataType","(Text|Integer|Double)","nextLine",
-				"OutputDataType","(Text|Integer|Double)", "nextLine",
+				"InputDataType","(Text|Integer|Double|Float)","nextLine",
+				"OutputDataType","(Text|Integer|Double|Float)", "nextLine",
 				"[;]{0,1}"
 				
 		};
@@ -94,18 +94,31 @@ public class CliExtendedDriver {
 	
 	public  int refactorCmd(String cmd){
 		
+		//System.out.printf("refactorCmd:%s \n",cmd);
+
 		processCmd(cmd);
 
 		if(parseResult.isEmpty()){
 			return -1; 
 		}
 		
-		String queryFormat="INSERT INTO SHARC (SHARC_TYPE, SHARC_NAME, SHARC_TNAME, SHARC_SID, SHARC_DID , SHARC_GRAN, "
-				+ "SHARC_MFUNC,SHARC_INPUT_TYPE, SHARC_OUTPUT_TYPE ) \n"
-				+"Values \n "
-				+"(\'%s\',\'%s\',\'%s\',%s, %s,\'%s\', \'%s\', \'%s\', \'%s\');";
+
+
+		if((parseResult.get(0)).equals("Soft")){
+			String queryFormat="INSERT INTO SHCorrelation (SHC_TYPE, SHC_NAME, SHC_TNAME, SHC_SID, SHC_DID , SHC_GRAN, "
+					+ "SHC_MAPFUNC,SHC_INPUT_TYPE, SHC_OUTPUT_TYPE, SHC_STATUS) \n"
+					+"Values \n "
+					+"(\'%s\',\'%s\',\'%s\',%s, %s,\'%s\', \'%s\', \'%s\', \'%s\','D');";
+			result=String.format(queryFormat, parseResult.toArray());
+		}
+		else{
+			String queryFormat="INSERT INTO SHCorrelation (SHC_TYPE, SHC_NAME, SHC_TNAME, SHC_SID, SHC_DID , SHC_GRAN, "
+					+ "SHC_MAPFUNC,SHC_INPUT_TYPE, SHC_OUTPUT_TYPE ) \n"
+					+"Values \n "
+					+"(\'%s\',\'%s\',\'%s\',%s, %s,\'%s\', \'%s\', \'%s\', \'%s\');";
 		
-		result=String.format(queryFormat, parseResult.toArray());
+			result=String.format(queryFormat, parseResult.toArray());
+		}
 		
 		
 	
@@ -126,8 +139,9 @@ public class CliExtendedDriver {
 
             HiveConf conf = new HiveConf();
            
-
-            conf.addResource(new Path("/Users/dongqingxiao/Documents/vldbProject/hive/packaging/target/apache-hive-2.1.0-SNAPSHOT-bin/apache-hive-2.1.0-SNAPSHOT-bin/conf/hive-site.xml"));
+           	String homePath=System.getenv("HIVE_HOME");
+           	//System.out.printf("hive home setting:%s\n", homePath); 
+            conf.addResource(new Path(homePath+"/conf/hive-site.xml"));
             Class.forName(conf.getVar(ConfVars.METASTORE_CONNECTION_DRIVER));
             conn = DriverManager.getConnection(
                     conf.getVar(ConfVars.METASTORECONNECTURLKEY),
@@ -143,6 +157,7 @@ public class CliExtendedDriver {
                 );
 
             System.out.printf("Query OK, %d row in Metastore.sharc affected \n",rs);
+            System.out.printf("Create Correlation, please provide your java/python script to %s \n",homePath+"/userScripts/"); 
           	
         }
         finally {
