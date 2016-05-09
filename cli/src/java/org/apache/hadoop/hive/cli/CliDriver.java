@@ -134,16 +134,36 @@ public class CliDriver {
      // System.out.printf("matches\n");
       try{
         ceDriver.run();
+        ret=1;
       }catch(Exception e){
         console.printError("Exception raised from Shell command " + e.getLocalizedMessage(),
             stringifyException(e));
-        ret = 1;
+        ret=-1;
       }
       //done 
       return ret;
     }
+
+    VerifyQueryDriver vqDriver=new VerifyQueryDriver();
+
+    if(vqDriver.refactorCmd(cmd_trimmed)!=-1){
+      console.printInfo("verify query, will connect to other driver for running\n");
+
+      try{
+        //vqDriver.runHiveCmd(); // carefully think to pass some vaiable for futher usage  
+        vqDriver.run(); 
+        
+      }catch(Exception e){
+        console.printError("Exception raised from Shell command " + e.getLocalizedMessage(),
+            stringifyException(e));
+      }
+
+
+      ret=1;
+      return ret;
+    }
     
-    //System.out.printf("cmd:%s\n",cmd_trimmed);
+
     
     if (cmd_trimmed.toLowerCase().equals("quit") || cmd_trimmed.toLowerCase().equals("exit")) {
 
@@ -200,6 +220,7 @@ public class CliDriver {
     }  else { // local mode
       try {
         CommandProcessor proc = CommandProcessorFactory.get(tokens, (HiveConf) conf);
+        
         ret = processLocalCmd(cmd, proc, ss);
       } catch (SQLException e) {
         console.printError("Failed processing command " + tokens[0] + " " + e.getLocalizedMessage(),
@@ -298,6 +319,7 @@ public class CliDriver {
             console.printInfo("Time taken: " + timeTaken + " seconds" +
                 (counter == 0 ? "" : ", Fetched: " + counter + " row(s)"));
           } else {
+
             String firstToken = tokenizeCmd(cmd.trim())[0];
             String cmd_1 = getFirstCmd(cmd.trim(), firstToken.length());
 
@@ -314,6 +336,8 @@ public class CliDriver {
                 console.printInfo(consoleMsg);
               }
             }
+
+
             ret = res.getResponseCode();
           }
         }
