@@ -1,11 +1,19 @@
 import sys
 import importlib 
 import os 
+# from subprocess import call 
+import os 
+import subprocess 
+
 
 
 configurations=[]
 module_Map={}
 vCount={}
+distViolation=set()
+flag=True 
+threshold=100
+
 
 class Correlation:
 
@@ -69,7 +77,7 @@ def range_verify(tline):
 	else:
 		return False
 
-verifyMethod={'singleton':singleton_verify, 'list': list_verify, 'rangle':range_verify}
+verifyMethod={'singleton':singleton_verify, 'list': list_verify, 'range':range_verify}
 
 def testViolate(cor, lines):
 	inputType=cor.SHC_INPUT_TYPE
@@ -104,21 +112,29 @@ def testViolate(cor, lines):
 	#print tline 
 	check=verifyMethod[granlarity](tline)
 	if not check:
+		distViolation.add(resultVal)  # I am not sure 
 		vCount[name]+=1
+
+def scriptPath():
+
+	mr_local=os.environ["mapreduce_cluster_local_dir"]
+	paths=mr_local.split('/')
+	paths=paths[:-2]
+	return '/'.join(paths)+"/"
+
 
 
 
 def process():
 
-	
-	#hive_home_conf="HIVE_HOME"
-	#hive_home=os.environ[hive_home_conf]
+	path=scriptPath()
+	script_path=path+"filecache/"
+	subdirs=[x[0] for x in os.walk(script_path)]
+	# translate into numbers then parsing it 
 
-	hive_home="/Users/dongqingxiao/Documents/vldbProject/hive/packaging/target/apache-hive-2.1.0-SNAPSHOT-bin/apache-hive-2.1.0-SNAPSHOT-bin"
+	for subdir in subdirs:
+		sys.path.append(subdir)
 
-
-
-	sys.path.append(hive_home+"/userScripts/")
 
 	for cor in configurations:
 		module_obj=__import__(cor.SHC_Name)
@@ -132,18 +148,30 @@ def process():
 		for cor in configurations:
 			testViolate(cor,lines)
 
-		# Please help 
+
+
 
 
 	for cor in configurations:
 		print "{}\t{}".format(cor.SHC_Name,vCount[cor.SHC_Name])
-	#
+	
+
+	if len(distViolation)>threshold:
+		flag=False
+		print "{}\t{}".format(cor.SHC_Name, "Too Many")
+
+	
 
 
-
-
-
-		
+# 
+def writeFile(mapreduce_task_id):
+	# if flag:
+	e_file=open(mapreduce_task_id,'w')
+	# e_file.write("hello world")
+	for item in distViolation:
+		e_file.write("{}\n".format(item))
+	e_file.close()
+	
 
 
 
@@ -151,7 +179,18 @@ if __name__=="__main__":
 	#print "echo"
 	optionParser(sys.argv[1:])
 	process()
-	
+
+	# file path 
+	# mapreduce_task_id  # best choice  
+	mapreduce_task_id=os.environ["mapreduce_task_id"]
+	mapreduce_task_id=mapreduce_task_id+".txt"
+
+	if flag:
+		writeFile(mapreduce_task_id)
+		hadoop_bin_path=os.environ["hadoop_bin_path"]
+		with open(os.devnull, 'wb') as devnull:
+			subprocess.check_call([hadoop_bin_path, 'dfs' , '-copyFromLocal', './'+mapreduce_task_id, '/tempViolation/'], stdout=devnull, stderr=subprocess.STDOUT)
+
 
 
 
