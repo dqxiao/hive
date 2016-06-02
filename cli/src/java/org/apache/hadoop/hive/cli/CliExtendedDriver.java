@@ -108,14 +108,14 @@ public class CliExtendedDriver {
 			String queryFormat="INSERT INTO SHCorrelation (SHC_TYPE, SHC_NAME, SHC_TNAME, SHC_SID, SHC_DID , SHC_GRAN, "
 					+ "SHC_MAPFUNC,SHC_INPUT_TYPE, SHC_OUTPUT_TYPE, SHC_STATUS) \n"
 					+"Values \n "
-					+"(\'%s\',\'%s\',\'%s\',%s, %s,\'%s\', \'%s\', \'%s\', \'%s\','D');";
+					+"(\'%s\',\'%s\',\'%s\',%s, %s,\'%s\', \'%s\', \'%s\', \'%s\','V');";
 			result=String.format(queryFormat, parseResult.toArray());
 		}
 		else{
 			String queryFormat="INSERT INTO SHCorrelation (SHC_TYPE, SHC_NAME, SHC_TNAME, SHC_SID, SHC_DID , SHC_GRAN, "
-					+ "SHC_MAPFUNC,SHC_INPUT_TYPE, SHC_OUTPUT_TYPE ) \n"
+					+ "SHC_MAPFUNC,SHC_INPUT_TYPE, SHC_OUTPUT_TYPE, SHC_STATUS) \n"
 					+"Values \n "
-					+"(\'%s\',\'%s\',\'%s\',%s, %s,\'%s\', \'%s\', \'%s\', \'%s\');";
+					+"(\'%s\',\'%s\',\'%s\',%s, %s,\'%s\', \'%s\', \'%s\', \'%s\', 'D');";
 		
 			result=String.format(queryFormat, parseResult.toArray());
 		}

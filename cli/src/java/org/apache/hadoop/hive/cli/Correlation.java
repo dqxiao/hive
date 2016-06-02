@@ -54,7 +54,7 @@ public class Correlation {
 	} 
 
 	public boolean waitForVerify(){
-		return SHC_STATUS.equals("D");  // waiting for verification 
+		return SHC_STATUS.equals("V");  // waiting for verification 
 	}
 	
 	
@@ -77,7 +77,7 @@ public class Correlation {
 
 	public String toQuery(){
 		//SHC_NAME, SID, DID, SHC_GRAN, SHC_MAPFUNC, SHC_INPUT_TYPE, SHC_OUTPUT_TYPE
-		String queryFormat="%s %d %d %s %s %s %s";
+		String queryFormat="%s %d %d %s %s %s %s ";
 
 		String result=String.format(queryFormat, SHC_NAME, SHC_SID, SHC_DID, SHC_GRAN, SHC_MAPFUNC, SHC_INPUT_TYPE, SHC_OUTPUT_TYPE);
 
