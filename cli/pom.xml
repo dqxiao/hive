@@ -122,6 +122,12 @@
       <version>${mockito-all.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- http://mvnrepository.com/artifact/org.ini4j/ini4j -->
+    <dependency>
+        <groupId>org.ini4j</groupId>
+        <artifactId>ini4j</artifactId>
+        <version>0.5.1</version>
+    </dependency>
   </dependencies>
 
   <build>
