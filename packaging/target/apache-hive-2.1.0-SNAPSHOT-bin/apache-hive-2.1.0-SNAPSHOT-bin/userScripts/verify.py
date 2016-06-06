@@ -10,7 +10,7 @@ configurations=[]
 module_Map={}
 vCount={}
 distViolation=dict()
-threshold=100
+# threshold=100
 
 class Correlation:
 
@@ -181,6 +181,12 @@ def writeFile(mapreduce_task_id,cor):
 if __name__=="__main__":
 	#print "echo"
 	optionParser(sys.argv[1:])
+	global threahold
+	if "verify_threshold" in os.environ:
+		threahold=int(os.environ["verify_threshold"])
+	else:
+		threahold=1000
+
 	process()
 
 	# mapreduce_task_id="01"
