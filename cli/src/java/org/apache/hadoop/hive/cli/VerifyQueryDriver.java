@@ -617,7 +617,7 @@ public class VerifyQueryDriver {
 
 		for(Correlation cor:correlations){
 			String name=cor.SHC_NAME;
-			String output_type=cor.SHC_OUTPUT_TYPE;
+			String output_type=cor.SHC_INPUT_TYPE; 
 			String mergeQuery=String.format(mergeQueryFormat,output_type,name);
 
 			try{

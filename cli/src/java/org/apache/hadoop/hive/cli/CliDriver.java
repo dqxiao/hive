@@ -125,7 +125,7 @@ public class CliDriver {
     // Flush the print stream, so it doesn't include output from the last command
     ss.err.flush();
     String cmd_trimmed = cmd.trim();
-    String[] tokens = tokenizeCmd(cmd_trimmed);
+   
     int ret = 0;
     
     CliExtendedDriver  ceDriver=new CliExtendedDriver();
@@ -144,13 +144,26 @@ public class CliDriver {
       return ret;
     }
 
+    HiveQueryParserEx queryEx=new HiveQueryParserEx();
+
+    // such query need rewrite carefully 
+    if(queryEx.parse(cmd_trimmed)==0){
+
+      queryEx.run(); // 
+      // set the cmd to rewrited one 
+      cmd_trimmed=queryEx.getResult();
+      cmd=cmd_trimmed; 
+      // done 
+    }
+    String[] tokens = tokenizeCmd(cmd_trimmed);
+
+
     VerifyQueryDriver vqDriver=new VerifyQueryDriver();
 
     if(vqDriver.refactorCmd(cmd_trimmed)!=-1){
       console.printInfo("verify query, will connect to other driver for running\n");
 
       try{
-        //vqDriver.runHiveCmd(); // carefully think to pass some vaiable for futher usage  
         vqDriver.run(); 
         
       }catch(Exception e){
@@ -220,8 +233,13 @@ public class CliDriver {
     }  else { // local mode
       try {
         CommandProcessor proc = CommandProcessorFactory.get(tokens, (HiveConf) conf);
-        
+        if(DEBUG){
+          System.out.printf("real cmd: %s \n", cmd);
+        }
+
         ret = processLocalCmd(cmd, proc, ss);
+
+
       } catch (SQLException e) {
         console.printError("Failed processing command " + tokens[0] + " " + e.getLocalizedMessage(),
           org.apache.hadoop.util.StringUtils.stringifyException(e));
