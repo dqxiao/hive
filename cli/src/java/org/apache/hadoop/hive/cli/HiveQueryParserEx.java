@@ -22,7 +22,12 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 
 
-
+/*
+* Used for travel parse tree for checking 
+* single table 
+* equal condition 
+* simple query (No nest-query)
+*/
 class ExprVisitor implements IExpressionVisitor {
 	private static boolean hasEquals=false;
 
@@ -61,7 +66,10 @@ class ExprVisitor implements IExpressionVisitor {
 
 
 
-
+/*
+* USed for setting source val for each relation  
+* based on the equal expression 
+*/
 class ExprVisitorExtract implements IExpressionVisitor {
 	
 	TableMetadata tmeta;
@@ -116,6 +124,11 @@ class ExprVisitorExtract implements IExpressionVisitor {
 	
 }
 
+
+
+/*
+* Used for travel the parse tree
+*/
 class ExprVisitorRefactor implements IExpressionVisitor {
 	
 	TableMetadata tmeta;
@@ -141,7 +154,11 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 				TExpression  subExpr=(TExpression)pNode;
 				switch(subExpr.getExpressionType()){
 				case simple_comparison_t:
-					//System.out.printf("%s \n", subExpr.getComparisonType());
+					
+					// done 
+					String orgExp=subExpr.toString();
+
+
 					if(subExpr.getComparisonType().toString().equals("equals")){
 					
 						String sourceAttr= subExpr.getLeftOperand().toString();
@@ -149,7 +166,7 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 						
 						for(Correlation cor: correlations){
 			
-							if(cor.isNullSval()){
+							if(cor.isNullTval()){
 								continue;
 							}
 							
@@ -183,9 +200,16 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 								// done 
 							}
 						}
+						String newExp=subExpr.toString();
+
+						String expString=String.format("%s and %s", orgExp, newExp);
 					
+						subExpr.setString(expString);
 						
 					}
+
+
+
 					break;
 				default:
 					break;
@@ -389,8 +413,9 @@ public class HiveQueryParserEx {
 		try{
 			getMetadata(); // metastore 
 			getCorrelationsMetaStore(); // 
+
 			extract();
-			//violate();  // waiting for implementation 
+			violationTest();
 			getTargetVals();
 	     	refactorCmd();
 
@@ -400,6 +425,54 @@ public class HiveQueryParserEx {
 				System.err.println("Caught: " + e.getMessage());
 		}
 
+	}
+
+	private static void violationTest(Correlation cor) throws Exception{
+
+		String violateQueryFormat="select * from SHCViolation where shc_name=\'%s\' and shc_val=\'%s\'";
+
+		Connection conn = null;
+		try{
+				// better to read for configuration 
+				conn= DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "", "");
+				Statement stmt = conn.createStatement();
+
+				String query=String.format(violateQueryFormat,cor.SHC_NAME, cor.SHC_SVal);
+				// String query=String.format(queryFormat, tableName); 
+				ResultSet rs = stmt.executeQuery(query);
+				if(debug){
+					System.out.printf("test violation %s \n", query); 
+				}
+				while(rs.next()){
+					cor.setViolate();
+					if(debug){
+						System.out.printf("%s set violated \n", cor.SHC_NAME);
+					}
+					break;
+				}
+				//done 
+			}
+			finally {
+	            if (conn != null) {
+	                conn.close();
+	            }
+        }
+
+
+	}
+
+	private static void violationTest(){
+		for(Correlation cor: correlations){
+			if(cor.isHard()){
+				continue; 
+			}
+
+			try{
+				violationTest(cor); // done 
+			}catch(Exception e){
+				System.err.println("Caught: " + e.getMessage());
+			}
+		}
 	}
 
 	private static void scriptLoadding(String correlationName, Statement stmt){
@@ -423,6 +496,9 @@ public class HiveQueryParserEx {
 
 	//
 	private static void getTargetVal(Correlation cor) throws Exception{
+		if(log){
+			System.out.print("get Target Val \n");
+		}
 
 		String targetValQueryFormat="select transform(%s) using \'%s %s.%s\'";
 
@@ -466,6 +542,9 @@ public class HiveQueryParserEx {
 			if(cor.isNullSval()){
 				continue;
 			}
+			if(cor.SHC_VIOLATED){
+				continue;
+			}
 			try{
 				getTargetVal(cor);
 			}catch(Exception e){
@@ -489,15 +568,27 @@ public class HiveQueryParserEx {
 		 TCustomSqlStatement querystmt=sqlparser.sqlstatements.get(0);
 		 TSelectSqlStatement selectStmt=(TSelectSqlStatement) querystmt;
 		 TExpression expr = selectStmt.getWhereClause().getCondition();
-		 // ExprVisitorExtract extractor=new ExprVisitorExtract(meta,corrs);
-	  //    expr.postOrderTraverse(extractor);
-	
-	     
-	     // query 
-	     ExprVisitorRefactor  refactor=new ExprVisitorRefactor(meta,correlations);
-	     expr.postOrderTraverse(refactor);
-	     // System.out.printf("query:%s",selectStmt.toString());
+		
+		boolean flag=false;
 
+		//
+		if(correlations.size()!=0){
+			for(Correlation cor: correlations){
+				if(!cor.isNullTval()){
+					//System.out.printf("is Not null val:%s\n", cor.SHC_TargetVal); 
+					flag=true;
+					break;
+				}
+			}
+		}
+	     
+	    if(flag){
+	    	//System.out.printf("refactor \n");
+	     	ExprVisitorRefactor  refactor=new ExprVisitorRefactor(meta,correlations);
+	     	expr.postOrderTraverse(refactor);
+	 	}
+	 	
+	 	// original query 
 	     result=selectStmt.toString();
 	}
 	

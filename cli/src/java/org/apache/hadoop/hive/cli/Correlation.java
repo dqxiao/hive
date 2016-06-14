@@ -68,6 +68,7 @@ public class Correlation {
 
 			SHC_STATUS=rs.getString("SHC_STATUS");
 			SHC_SVal="";
+			SHC_TargetVal="";
 			SHC_VIOLATED=false;  
 			//
 			
@@ -82,10 +83,23 @@ public class Correlation {
 	public boolean isNullSval(){
 		return SHC_SVal.equals("");
 	}
+
+	public boolean isNullTval(){
+		return SHC_TargetVal.equals("");
+	}
+	// public void set
 	
 	public boolean isSoft(){
 		return SHC_TYPE.equals("Soft");
 	} 
+
+	public boolean isHard(){
+		return SHC_TYPE.equals("Hard");
+	}
+
+	public void setViolate(){
+		SHC_VIOLATED=true;
+	}
 
 	public boolean waitForVerify(){
 		return SHC_STATUS.equals("V");  // waiting for verification 

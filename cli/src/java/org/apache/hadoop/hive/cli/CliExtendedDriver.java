@@ -38,8 +38,8 @@ public class CliExtendedDriver {
 				"DestinationAttrIndex","(\\d+)", "nextLine",
 				"Granularity", "(Singleton|Range|List)", "nextLine",
 				"MappingFunc", "(\\w+)","nextLine",
-				"InputDataType","(Text|Integer|Double|Float)","nextLine",
-				"OutputDataType","(Text|Integer|Double|Float)", "nextLine",
+				"InputDataType","(Text|Integer|Int|Double|Float)","nextLine",
+				"OutputDataType","(Text|Integer|Int|Double|Float)", "nextLine",
 				"[;]{0,1}"
 				
 		};
