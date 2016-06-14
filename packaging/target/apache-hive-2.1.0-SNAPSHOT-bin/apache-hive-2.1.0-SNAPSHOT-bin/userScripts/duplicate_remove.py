@@ -1,9 +1,11 @@
 import sys
+import os
 
-threshold=100
+# threshold=100
 distViolation=set()
 
 methods={'integer':int, 
+			'int':int,
 		  'float':float}
 class ViolationConf:
 	def __init__(self, confs):
@@ -38,4 +40,9 @@ def process():
 
 if __name__=="__main__":
 	optionParser(sys.argv[1:])
+	global threshold
+ 	if "verify_threshold" in os.environ:
+ 		threshold=int(os.environ["verify_threshold"])
+ 	else:
+ 		threshold=1000
 	process()

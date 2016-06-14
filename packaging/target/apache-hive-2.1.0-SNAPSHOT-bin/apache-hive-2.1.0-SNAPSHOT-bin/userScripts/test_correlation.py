@@ -7,9 +7,10 @@ def mapping(x):
 
 if __name__=="__main__":
 
-	x=int(sys.argv[1])
-	
-	print mapping(x)
+	for line in sys.stdin:
+		line=line.strip()
+		x=int(line)
+		print mapping(x)
 
 
 

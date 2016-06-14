@@ -1,7 +1,6 @@
 import sys
 import importlib 
 import os 
-import os 
 import subprocess 
 
 
@@ -10,7 +9,7 @@ configurations=[]
 module_Map={}
 vCount={}
 distViolation=dict()
-# threshold=100
+
 
 class Correlation:
 
@@ -55,6 +54,7 @@ def optionParser(argv):
 
 
 methods={'integer':int, 
+		  'int': int,
 		  'float':float}
 
 
@@ -117,7 +117,7 @@ def testViolate(cor, lines):
 	#print tline 
 	check=verifyMethod[granlarity](tline)
 	if not check:
-		distViolation[name].add(resultVal)
+		distViolation[name].add(inputVal) # set violated val 
 		vCount[name]+=1
 
 def scriptPath():
@@ -181,12 +181,11 @@ def writeFile(mapreduce_task_id,cor):
 if __name__=="__main__":
 	#print "echo"
 	optionParser(sys.argv[1:])
-	global threahold
-	if "verify_threshold" in os.environ:
-		threahold=int(os.environ["verify_threshold"])
-	else:
-		threahold=1000
-
+	global threshold
+ 	if "verify_threshold" in os.environ:
+ 		threshold=int(os.environ["verify_threshold"])
+ 	else:
+ 		threshold=1000
 	process()
 
 	# mapreduce_task_id="01"
