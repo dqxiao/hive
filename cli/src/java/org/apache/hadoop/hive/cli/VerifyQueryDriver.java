@@ -18,8 +18,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 
-// import java.io.FileInputStream;
-// // import java.util.Properties;
+/*Verify
+*/
+
 import org.ini4j.Ini;
 import java.io.File;
 
