@@ -32,7 +32,7 @@ public class MaintainQueryDriver {
 	private static String driverName = "org.apache.hive.jdbc.HiveDriver";
 
 	static enum VQType{
-		None, MapOnly, MapReduce;
+		None
 	}
 	
 
@@ -310,7 +310,7 @@ public class MaintainQueryDriver {
            			System.out.printf("corerlation: %s\n", cor.toString()); 
            		}
 
-           		if(cor.isSoft()&& cor.waitForVerify()){
+           		if(cor.isSoft()&& cor.waitForMaintain()){
            			correlations.add(cor);
            		}else{
            			if(LOG){
@@ -471,7 +471,6 @@ public class MaintainQueryDriver {
 
 		String mergeQueryFormat="CREATE TABLE  %s \n"
 							+"like %s \n"
-							+"COMMENT \'maintain violated \' \n"
 							+"ROW FORMAT DELIMITED \n"
 							+"FIELDS TERMINATED BY \',\' \n"
 							+"LINES TERMINATED BY \'\\n\' \n"

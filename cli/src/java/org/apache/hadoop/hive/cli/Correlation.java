@@ -104,7 +104,14 @@ public class Correlation {
 	public boolean waitForVerify(){
 		return SHC_STATUS.equals("V");  // waiting for verification 
 	}
+
+
+	/* correlation should first be verified then  */
 	
+	public boolean waitForMaintain(){
+		return SHC_STATUS.equals("D");
+	}
+
 	public GRANTYPE getGranType(){
 		if(SHC_GRAN.equals("list")){
 			return GRANTYPE.List;

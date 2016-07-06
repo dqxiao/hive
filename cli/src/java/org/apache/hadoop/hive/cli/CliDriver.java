@@ -160,6 +160,9 @@ public class CliDriver {
 
     VerifyQueryDriver vqDriver=new VerifyQueryDriver();
 
+
+    MaintainQueryDriver mqDriver=new MaintainQueryDriver();
+
     if(vqDriver.refactorCmd(cmd_trimmed)!=-1){
       console.printInfo("verify query, will connect to other driver for running\n");
 
@@ -176,6 +179,23 @@ public class CliDriver {
       return ret;
     }
     
+    if(mqDriver.refactorCmd(cmd_trimmed)!=-1){
+      console.printInfo("Maintain query, will connect to other driver for running\n");
+
+      try{
+        mqDriver.run(); 
+      }catch(Exception e){
+          console.printError("Exception raised from Shell command " + e.getLocalizedMessage(),
+            stringifyException(e));
+      }
+
+
+      ret=1;
+      return ret;
+    }
+
+
+
 
     
     if (cmd_trimmed.toLowerCase().equals("quit") || cmd_trimmed.toLowerCase().equals("exit")) {
