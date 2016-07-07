@@ -117,7 +117,7 @@ def testViolate(cor, lines):
 
 	#print tline 
 	check=verifyMethod[granlarity](tline)
-	oldline='\t'.join(lines)
+	oldline=','.join(lines)
 
 	if not check:
 		tupleViolation[name].append(oldline) # set violated val 
