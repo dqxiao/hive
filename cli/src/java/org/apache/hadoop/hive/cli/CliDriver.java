@@ -146,7 +146,7 @@ public class CliDriver {
 
     HiveQueryParserEx queryEx=new HiveQueryParserEx();
 
-    // such query need rewrite carefully 
+
     if(queryEx.parse(cmd_trimmed)==0){
 
       queryEx.run(); // 
@@ -159,9 +159,9 @@ public class CliDriver {
 
 
     VerifyQueryDriver vqDriver=new VerifyQueryDriver();
-
-
     MaintainQueryDriver mqDriver=new MaintainQueryDriver();
+
+
 
     if(vqDriver.refactorCmd(cmd_trimmed)!=-1){
       console.printInfo("verify query, will connect to other driver for running\n");
@@ -186,7 +186,7 @@ public class CliDriver {
         mqDriver.run(); 
       }catch(Exception e){
           console.printError("Exception raised from Shell command " + e.getLocalizedMessage(),
-            stringifyException(e));
+          stringifyException(e));
       }
 
 

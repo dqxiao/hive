@@ -22,12 +22,12 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 
 
-/*
-* Used for travel parse tree for checking 
-* single table 
-* equal condition 
-* simple query (No nest-query)
-*/
+
+/**
+ *
+ * Query Rewriting 
+ *
+ */
 class ExprVisitor implements IExpressionVisitor {
 	private static boolean hasEquals=false;
 
@@ -67,12 +67,12 @@ class ExprVisitor implements IExpressionVisitor {
 
 
 /*
-* USed for setting source val for each relation  
+* for setting source val for each relation  
 * based on the equal expression 
 */
 class ExprVisitorExtract implements IExpressionVisitor {
 	
-	TableMetadata tmeta;
+	TableMetadata tmeta; 
 	ArrayList<Correlation> correlations=new ArrayList<Correlation>();
 	
 	public ExprVisitorExtract(TableMetadata t, ArrayList<Correlation>  corrs){
@@ -133,6 +133,10 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 	
 	TableMetadata tmeta;
 	ArrayList<Correlation> correlations=new ArrayList<Correlation>();
+
+
+	String orignalExp=""; // done 
+
 	
 	public ExprVisitorRefactor(TableMetadata t, ArrayList<Correlation>  corrs){
 		tmeta=t;
@@ -141,6 +145,10 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 	
 	public ArrayList<Correlation> getCorrelations(){
 		return correlations;
+	}
+
+	public String getOrgExp(){
+		return orignalExp;
 	}
 
 	@Override
@@ -157,7 +165,7 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 					
 					// done 
 					String orgExp=subExpr.toString();
-
+					orignalExp=orgExp;
 
 					if(subExpr.getComparisonType().toString().equals("equals")){
 					
@@ -168,12 +176,8 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 			
 							if(cor.isNullTval()){
 								continue;
-							}
-							
-							
+							}	
 							if(tmeta.getColumnNameByIndex(cor.SHC_SID).equals(sourceAttr)){
-
-								
 //								System.out.printf("info:%s \n", "SHC_ID get");
 								TExpression leftExp=subExpr.getLeftOperand();
 								leftExp.setString(tmeta.getColumnNameByIndex(cor.SHC_DID));
@@ -197,7 +201,7 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 								rightExp.setString(cor.SHC_TargetVal);
 								
 								subExpr.setRightOperand(rightExp);
-								// done 
+								// done  
 							}
 						}
 						String newExp=subExpr.toString();
@@ -207,9 +211,6 @@ class ExprVisitorRefactor implements IExpressionVisitor {
 						subExpr.setString(expString);
 						
 					}
-
-
-
 					break;
 				default:
 					break;
@@ -258,11 +259,9 @@ public class HiveQueryParserEx {
 		//System.out.println("pre order");
 		
 		ExprVisitor visitor=new ExprVisitor();
-         expr.postOrderTraverse(visitor);
-         
-         return visitor.hasEqualExpre();
-         
-
+        expr.postOrderTraverse(visitor);
+       
+        return visitor.hasEqualExpre();
 	}
 	
 	
@@ -411,21 +410,19 @@ public class HiveQueryParserEx {
 
 	public static void run(){
 		try{
-			getMetadata(); // metastore 
-			getCorrelationsMetaStore(); // 
-
-			extract();
-			violationTest();
-			getTargetVals();
-	     	refactorCmd();
-
-	     	//done 
+			getMetadata(); // Get Meta information  
+			getCorrelationsMetaStore(); // Get Correlation from MetaStore 
+			extract();	// extract source val from input query 
+			violationTest(); // test whether it belongs to violated tuples 
+			getTargetVals(); // if not violated; get its targetVals 
+	     	refactorCmd();  //  need get equal attribute 
 
 		}catch(Exception e){
 				System.err.println("Caught: " + e.getMessage());
 		}
 
 	}
+
 
 	private static void violationTest(Correlation cor) throws Exception{
 
@@ -536,13 +533,15 @@ public class HiveQueryParserEx {
 
 	}
 
-	public static void getTargetVals(){
+	private static void getTargetVals(){
 
 		for(Correlation cor: correlations){
+			// skip useless correlation 
 			if(cor.isNullSval()){
 				continue;
 			}
-			if(cor.SHC_VIOLATED){
+			// skip violated correlation while no maintained 
+			if(cor.SHC_VIOLATED && !cor.isMaintain()){
 				continue;
 			}
 			try{
@@ -564,32 +563,78 @@ public class HiveQueryParserEx {
 	     // done
 	}
 
+	/**
+	 * 
+	 * case 1: no correlation with this attribute--> original query  
+	 * case 2: with correlation and no violated --> refactor with targetVals   
+	 * case 3: with correlation and violated , no maintence --> origianl query 
+	 * case 4: with correlation and violated , maintance --> refactor with union query with targetVals 
+	 */
 	public static void refactorCmd(){
 		 TCustomSqlStatement querystmt=sqlparser.sqlstatements.get(0);
 		 TSelectSqlStatement selectStmt=(TSelectSqlStatement) querystmt;
 		 TExpression expr = selectStmt.getWhereClause().getCondition();
 		
-		boolean flag=false;
-
+		
+		 boolean refacorFlag=false;
+		 boolean unionFlag=false;
 		//
 		if(correlations.size()!=0){
 			for(Correlation cor: correlations){
 				if(!cor.isNullTval()){
-					//System.out.printf("is Not null val:%s\n", cor.SHC_TargetVal); 
-					flag=true;
-					break;
+
+					if(!cor.SHC_VIOLATED){
+						refacorFlag=true;
+						break;
+					}else{
+						unionFlag=true;
+						break;
+					}
 				}
 			}
 		}
-	     
-	    if(flag){
-	    	//System.out.printf("refactor \n");
-	     	ExprVisitorRefactor  refactor=new ExprVisitorRefactor(meta,correlations);
-	     	expr.postOrderTraverse(refactor);
-	 	}
+
+
+
+	    
+	    if(!unionFlag){
+	    	// case 2
+		    if(refacorFlag){
+		     	ExprVisitorRefactor  refactor=new ExprVisitorRefactor(meta,correlations);
+		     	expr.postOrderTraverse(refactor);
+		   		
+
+		 	}
+		 	// case 1, 3
+		 	result=selectStmt.toString();
+		 }else{
+		 	if(debug){
+		 		System.out.printf("refactor cmd with union cmd  \n");
+		 	}
+		 	// refactor 
+		 	ExprVisitorRefactor  refactor=new ExprVisitorRefactor(meta,correlations);
+		    expr.postOrderTraverse(refactor); 
+
+		    String orgCmd=sqlparser.sqltext;
+		    String shcName="";
+		    for(Correlation cor: correlations){
+		    	if(!cor.isNullTval()){
+					shcName=correlations.get(0).SHC_NAME;
+					break;
+				}
+			}
+			String vTableName=String.format("%s_%s", tableName, shcName);
+		    String unionCmd=orgCmd.replace(tableName,vTableName);
+
+		    System.out.printf("union command :%s \n", unionCmd);
+
+		    result=String.format("%s UNION %s", selectStmt.toString(), unionCmd); 
+
+
+		 	// result=selectStmt.toString();
+
+		 }
 	 	
-	 	// original query 
-	     result=selectStmt.toString();
 	}
 	
 	

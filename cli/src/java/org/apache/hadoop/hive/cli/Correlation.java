@@ -106,8 +106,11 @@ public class Correlation {
 	}
 
 
+	public boolean isMaintain(){
+		return SHC_STATUS.equals("M"); // whether maintain or not 
+	}
+
 	/* correlation should first be verified then  */
-	
 	public boolean waitForMaintain(){
 		return SHC_STATUS.equals("D");
 	}
